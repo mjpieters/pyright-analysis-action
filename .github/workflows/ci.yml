@@ -1,0 +1,174 @@
+name: Action checks
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*.*.*" ]
+  pull_request:
+  merge_group:
+
+env:
+  FORCE_COLOR: 1
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+permissions:
+  contents: read
+
+jobs:
+  python-lint:
+    runs-on: ubuntu-latest
+    name: "Python linting"
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      
+    - name: Install uv
+      uses: astral-sh/setup-uv@887a942a15af3a7626099df99e897a18d9e5ab3a # v5.1.0
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+
+    - name: Set up Python 🐍
+      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+      with:
+        python-version-file: "pyproject.toml"
+    
+    - name: Check lock is up-to-date
+      run: |
+        uv lock --check
+
+    - name: Install dependencies
+      run: |
+        uv sync
+        echo "$PWD/.venv/bin" >> $GITHUB_PATH
+
+    - name: Check file formatting
+      uses: astral-sh/ruff-action@31a518504640beb4897d0b9f9e50a2a9196e75ba # v3.0.1
+      with:
+        args: "format --check"
+
+    - name: Lint with ruff
+      env:
+        RUFF_OUTPUT_FORMAT: github
+      run: |
+        ruff check
+
+    - name: Typecheck with pyright
+      uses: jakebailey/pyright-action@b5d50e5cde6547546a5c4ac92e416a8c2c1a1dfe # v2.3.2
+      with:
+        version: PATH
+
+  docker-lint:
+    runs-on: ubuntu-latest
+    name: "Docker linting"
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+  
+    - uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf # v3.1.0
+      name: Lint Dockerfile
+  
+  tests:
+    runs-on: ubuntu-latest
+    name: Python tests
+
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@887a942a15af3a7626099df99e897a18d9e5ab3a  # v5.1.0
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+  
+    - name: Set up Python 🐍
+      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+      with:
+        python-version: 3.13
+  
+    - name: Install dependencies
+      run: |
+        uv sync
+
+    - name: Test with pytest
+      run: |
+        uv run pytest -v --junitxml=junit.xml -o junit_family=legacy
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@1e68e06f1dbfde0e4cefc87efeba9e4643565303 # v5.1.2
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/test-results-action@9739113ad922ea0a9abb4b2c0f8bf6a4aa8ef820  # v1.0.1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+  build:
+    runs-on: ubuntu-latest
+    name: "Build"
+    needs:
+    - python-lint
+    - tests
+    - docker-lint
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+  
+    - name: Build and export to Docker
+      uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355 # v6.10.0
+      with:
+        load: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:test
+        build-args: |
+          VERSION="0.1.0dev0+test"
+    
+    - name: Image smoketest
+      env:
+        TEST_TAG: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:test
+      run: |
+        docker run --rm "${TEST_TAG}" --smoketest
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96 # v5.6.1
+      with:
+        images: 
+        tags: |
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+            type=sha,format=long,prefix=
+            type=ref,event=branch
+            type=ref,event=pr
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355 # v6.10.0
+      name: Build image
+      id: build-image
+      with:
+        context: .
+        push: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        annotations: ${{ steps.meta.outputs.annotations }}
+        build-args: |
+          VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+
+    - name: Generate artifact attestation
+      if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
+      uses: actions/attest-build-provenance@7668571508540a607bdfd90a87a560489fe372eb # v2.1.0
+      with:
+        subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+        subject-digest: ${{ steps.build-image.outputs.digest }}
+        push-to-registry: true

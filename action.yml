@@ -1,0 +1,38 @@
+name: 'Pyright Analysis Action'
+description: 'Generate a visualisation of your Python project type completeness'
+author: 'Martijn Pieters'
+
+branding:
+  icon: 'table'
+  color: 'green'
+
+inputs:
+  report:
+    description: >
+      Path to the Pyright verifytypes report. Must be in JSON format, so produced with the `--outputjson` flag.
+    required: true
+  embeddable:
+    description: >
+      Normally, the graph is generated as a full, stand-alone HTML file. If you want to embed the graph in
+      a larger web page, set this option to 'true' (or '1', 'on', or 'yes') to only output the report in
+      a `<div>` tag. Note that when you provide a page template, this option is ignored.
+  div_id:
+    description: >
+      Provide a value for the `<div>` tag that wraps the report in the generated HTML page. If omitted, a
+      random UUID is used.
+
+outputs:
+  html_url:
+    description:
+      The URL of the interactive graph.
+  preview_url:
+    description:
+      The URL of the preview image (SVG).
+  expiration:
+    description:
+      ISO8601-formatted date time value for when the published page expires.
+  
+
+runs:
+  using: docker
+  image: ghcr.io/${{ github.action_repository }}:${{ github.action_ref }}
