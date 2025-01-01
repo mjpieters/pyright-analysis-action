@@ -1,0 +1,61 @@
+[project]
+name = "pyright-analysis-action"
+version = "0.0.0"
+requires-python = ">=3.13"
+dependencies = [
+    "aiohttp>=3.11.11",
+    "humanize>=4.11.0",
+    "pyright-analysis==1.0.0rc3",
+    "tenacity>=9.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.0.1",
+    "pyright>=1.1.391",
+    "pytest-cov>=6.0.0",
+    "pytest>=8.3.4",
+    "ruff>=0.8.5",
+    "aioresponses>=0.7.7",
+]
+
+[tool.uv]
+prerelease = "allow"  # for kaleido 1.0.0rc0
+# since we have no version, tell uv to treat
+# all files in the project as cache key.
+cache-keys = [{ file = "src/**/*.py" }]
+
+[project.scripts]
+action = "pyright_analysis_action:app"
+
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.coverage.run]
+source_pkgs = ["pyright_analysis_action"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+omit = [
+    "_smoketest.py",
+]
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
+[tool.pyright]
+strict = ["src"]
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov --cov-report xml --cov-report term"
+
+[tool.ruff.lint]
+extend-select = [
+    "I",
+    "UP"
+]
