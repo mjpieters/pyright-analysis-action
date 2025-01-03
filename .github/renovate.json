@@ -17,6 +17,14 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/astral-sh/uv"],
       "versioning": "pep440"
+    },
+    {
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "automerge": true
     }
   ],
   "customManagers": [
@@ -29,5 +37,6 @@
       "registryUrlTemplate": "https://deb.debian.org/debian?{{#if release }}release={{release}}{{else}}suite=stable{{/if}}&components=main,contrib,non-free&binaryArch=amd64",
       "datasourceTemplate": "deb"
     }
-  ]
+  ],
+  "platformAutomerge": true
 }
