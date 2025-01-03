@@ -138,7 +138,7 @@ jobs:
       run: |
         if [[ "$GITHUB_REF" == refs/tags/image/* ]]; then
           echo "image_version=${GITHUB_REF_NAME#image/}" >> "$GITHUB_OUTPUT"
-        else:
+        else
           echo "image_version=" >> "$GITHUB_OUTPUT"
         fi
 
