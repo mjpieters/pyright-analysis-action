@@ -17,7 +17,7 @@ on:
   pull_request:
 
 permissions:
-  content: read
+  contents: read
 
 env:
   PROJECT_NAME: 'your_python_project'
@@ -25,8 +25,6 @@ env:
 jobs:
   generate_graph:
     runs-on: ubuntu-latest
-    permisions:
-      pull-requests: write # To post comments
 
     steps:
     - uses: actions/checkout@v4.2.2
@@ -48,7 +46,7 @@ jobs:
       env:
         # Smokeshow authorisation key for your project. Optional, but recommended.
         # See documentation for how to get one.
-        SMOKESHOW_AUTH_KEY: ${{ secret.SMOKESHOW_AUTH_KEY }}
+        SMOKESHOW_AUTH_KEY: ${{ secrets.SMOKESHOW_AUTH_KEY }}
       with:
           report: type_completeness_report.json
 ```
