@@ -137,7 +137,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96 # v5.6.1
       with:
-        images: 
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
             type=semver,pattern=v{{version}}
             type=semver,pattern=v{{major}}.{{minor}}
