@@ -127,7 +127,7 @@ class TestSmokeshowUpload:
         aioresponses.assert_called_with(
             SMOKESHOW_CREATE,
             hdrs.METH_POST,
-            headers={hdrs.AUTHORIZATION: expected_authorization},
+            headers={"Authorisation": expected_authorization},
         )
         aioresponses.assert_called_with(
             "https://test.example.com/foobar/index.html",

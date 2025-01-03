@@ -36,6 +36,7 @@ USER_AGENT = (
     "(https://github.com/mjpieters/pyright-analysis-action)"
 )
 SMOKESHOW_CREATE = URL("https://smokeshow.helpmanual.io/create/")
+AUTHORIZATION_HDR = "Authorisation"  # Smokeshow misspells the header (UK sp.)
 
 _logger = logging.getLogger(__name__)
 
@@ -126,7 +127,7 @@ class SmokeshowSite(AbstractAsyncContextManager["SmokeshowSite"]):
         ).__aenter__()
         self._create_response = await self.create_site()
         typer.echo(self._create_response)
-        self._client.headers[hdrs.AUTHORIZATION] = self._create_response.secret_key
+        self._client.headers[AUTHORIZATION_HDR] = self._create_response.secret_key
         setattr(self._client, "_base_url", URL(self._create_response.url))
         return self
 
@@ -136,7 +137,7 @@ class SmokeshowSite(AbstractAsyncContextManager["SmokeshowSite"]):
         if key is None:
             key = generate_smokeshow_key()
         async with self._client.post(
-            SMOKESHOW_CREATE, headers={hdrs.AUTHORIZATION: key}
+            SMOKESHOW_CREATE, headers={AUTHORIZATION_HDR: key}
         ) as response:
             response.raise_for_status()
             return SmokeshowCreateResponse.model_validate_json(await response.read())
