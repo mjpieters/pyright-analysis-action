@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import datetime
+import logging
 import os
 import types
 from contextlib import AbstractAsyncContextManager
@@ -16,6 +17,7 @@ from pydantic import BaseModel
 from pydantic.networks import AnyHttpUrl
 from pydantic.types import AwareDatetime
 from tenacity import (
+    before_sleep_log,
     retry,
     retry_if_exception,
     stop_after_attempt,
@@ -35,6 +37,8 @@ USER_AGENT = (
 )
 SMOKESHOW_CREATE = URL("https://smokeshow.helpmanual.io/create/")
 
+_logger = logging.getLogger(__name__)
+
 
 def _is_server_error(exception: BaseException) -> bool:
     if isinstance(exception, aiohttp.ClientConnectionError | asyncio.TimeoutError):
@@ -49,8 +53,10 @@ def _is_server_error(exception: BaseException) -> bool:
 # exponential back-off between 0.1 and 10 seconds, with random jitter injected.
 _smokeshow_retry = retry(
     retry=retry_if_exception(_is_server_error),
+    before_sleep=before_sleep_log(_logger, logging.WARNING),
     wait=wait_exponential_jitter(initial=0.1, max=10),
     stop=stop_after_attempt(3),
+    reraise=True,
 )
 
 
