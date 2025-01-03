@@ -2,7 +2,7 @@ name: Action checks
 on:
   push:
     branches: [ "main" ]
-    tags: [ "v*.*.*" ]
+    tags: [ "image/v*.*.*" ]
   pull_request:
   merge_group:
 
@@ -132,6 +132,15 @@ jobs:
         TEST_TAG: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:test
       run: |
         docker run --rm "${TEST_TAG}" --smoketest
+    
+    - name: Extract docker image tag
+      id: image_tag
+      run: |
+        if [[ "$GITHUB_REF" == refs/tags/image/* ]]; then
+          echo "image_version=${GITHUB_REF_NAME#image/}" >> "$GITHUB_OUTPUT"
+        else:
+          echo "image_version=" >> "$GITHUB_OUTPUT"
+        fi
 
     - name: Extract metadata (tags, labels) for Docker
       id: meta
@@ -139,9 +148,7 @@ jobs:
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
-            type=semver,pattern=v{{version}}
-            type=semver,pattern=v{{major}}
-            type=sha,format=long,prefix=
+            type=semver,pattern=v{{version}},value=${{ steps.image_tag.outputs.image_version }}
             type=ref,event=branch
             type=ref,event=pr
 

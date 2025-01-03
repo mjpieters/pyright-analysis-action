@@ -35,4 +35,4 @@ outputs:
 
 runs:
   using: docker
-  image: ghcr.io/${{ github.action_repository }}:${{ github.action_ref }}
+  image: docker://ghcr.io/mjpieters/pyright-analysis-action:v0.1.0@sha:97094fc018a9f42e36769b86b16b52802917950002dae65e91f8273d3f65065e
