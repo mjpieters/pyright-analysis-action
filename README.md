@@ -1,14 +1,14 @@
 # Pyright Analysis Action
 
-Generate a [Pyright Analysis type compleness visualisation](https://github.org/mjpieters/pyright-analysis) in your Python project Github workflows, and share this graph in a PR comment or the workflow summary, from a [pyright type compleness report](https://microsoft.github.io/pyright/#/typed-libraries?id=verifying-type-completeness).
+Generate a [Pyright Analysis type completeness visualisation](https://github.org/mjpieters/pyright-analysis) in your Python project Github workflows, and share this graph in a PR comment or the workflow summary, from a [pyright type completeness report](https://microsoft.github.io/pyright/#/typed-libraries?id=verifying-type-completeness).
 
 ## Usage
 
-Generate a type compleness report for your project, and pass it to
+Generate a type completeness report for your project, and pass it to
 this action:
 
 ```yaml
-name: Type Compleness graph
+name: Type Completeness graph
 
 on:
   push:
@@ -36,12 +36,12 @@ jobs:
     
     - name: Generate report JSON
       run: |
-        # Generate the type compleness report for your Python project.
+        # Generate the type completeness report for your Python project.
         # This assumes your Python project can be installed as editable
         # from files in the current directory
         uv tool run --with-editable . pyright \
           --ignoreexternal --outputjson \
-          --verifytypes $PROJECT_NAME > type_compleness_report.json
+          --verifytypes $PROJECT_NAME > type_completeness_report.json
 
     - name: Generate report visualisation
       uses: mjpieters/pyright-analysis-action@v1
@@ -50,7 +50,7 @@ jobs:
         # See documentation for how to get one.
         SMOKESHOW_AUTH_KEY: ${{ secret.SMOKESHOW_AUTH_KEY }}
       with:
-          report: type_compleness_report.json
+          report: type_completeness_report.json
 ```
 
 This outputs a preview image and a link in the workflow summary page.

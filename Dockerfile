@@ -23,7 +23,6 @@ ENV LIBFONTCONFIG1_VERSION="2.14.1-4"
 ENV LIBUUID1_VERSION="2.38.1-5+deb12u2"
 
 # Headless chrome, used to convert graphs to static images
-# registry
 RUN apt-get update -y \
     && apt-get install -y --no-install-recommends \
         libnspr4=${LIBNSPR4_VERSION} \
