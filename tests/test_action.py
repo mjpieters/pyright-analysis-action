@@ -45,7 +45,7 @@ class TestAction:
     def test_html_args_passthrough(self, embeddable: bool, div_id: str | None) -> None:
         action(self.report, embeddable=embeddable, div_id=div_id)
         self.mock_to_html.assert_called_once_with(
-            full_html=not embeddable, div_id=div_id
+            full_html=not embeddable, div_id=div_id, include_plotlyjs="cdn"
         )
 
     @pytest.mark.parametrize("smokeshow_auth_key", (None, "some-test-value"))
