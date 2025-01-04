@@ -35,4 +35,4 @@ outputs:
 
 runs:
   using: docker
-  image: docker://ghcr.io/mjpieters/pyright-analysis-action:v0.1.1@sha256:59e6adf4e0438f4c6d253e2cb3b009f12a80f885d667dd466e7f1fe337072bb2
+  image: docker://ghcr.io/mjpieters/pyright-analysis-action:v0.1.2@sha256:96d3d046c4ca15dae01a48239a204225b9e7487d5886423e91133d5ff2271b23

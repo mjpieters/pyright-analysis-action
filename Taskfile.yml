@@ -123,6 +123,17 @@ tasks:
     cmds:
       - uv run pytest {{.CLI_ARGS}}
   
+  release:update-action-*-*:
+    desc: Update docker image tag and digest in action.yml; execute as 'task release:update-action-VERSION-DIGEST'
+    vars:
+      VERSION: '{{index .MATCH 0}}'
+      DIGEST: '{{index .MATCH 1}}'
+    cmds:
+      - |
+        sed -i {{if eq OS "darwin"}}''{{end}} -E \
+          's|:v[[:digit:].]+@sha256:[[:xdigit:]]+$|:v{{.VERSION}}@sha256:{{.DIGEST}}|' \
+          action.yml
+
   gh-action:
     desc: Run as a GitHub action. Takes inputs as INPUT_* variables, and takes a WORKSPACE directory (defaults to cwd)
     deps: [dev:build]
