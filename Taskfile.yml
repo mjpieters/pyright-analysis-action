@@ -1,0 +1,202 @@
+version: '3'
+
+output: prefixed
+
+vars:
+  PROJECT_NAME: pyright-analysis-action
+
+tasks:
+  dev:build:
+    aliases:
+      - build
+    desc: Build the docker image for local use
+    run: once
+    sources:
+      - Dockerfile
+      - uv.lock
+      - pyproject.toml
+      - src/**/*.py
+      - .dockerignore
+    interactive: true  # keep docker connected to the tty for nicer log output
+    cmds:
+      - docker build -t {{.PROJECT_NAME}}:local .
+
+  dev:install-precommit:
+    desc: Install pre-commit into local git checkout
+    run: once
+    status:
+      - grep -q 'pre-commit\.com' .git/hooks/*
+    cmds:
+      - uv run pre-commit install
+
+  dev:lint:uv-lock:
+    aliases:
+      - check-lock
+    desc: Tests if uv lock is up-to-date
+    sources:
+      - pyproject.toml
+      - uv.lock
+    preconditions:
+      - sh: type "uv" &>/dev/null
+        msg: Please install uv, see https://docs.astral.sh/uv/getting-started/installation/
+    cmds:
+      - |
+        uv lock --locked 2>/dev/null || {
+          echo -e '\033[0;31mThe lockfile at `uv.lock` needs to be updated. To update the lockfile, run `task compile-deps`\033[0m'.
+          exit 1
+        } >&2
+
+  dev:lint:code:
+    sources:
+      - pyproject.toml
+      - src/**/*.py
+    cmds:
+      - uv run ruff format --check
+      - uv run ruff check
+
+  dev:lint:dockerfile:
+    sources:
+      - Dockerfile
+    deps:
+      - dev:install-precommit
+    cmds:
+      - pre-commit run --files Dockerfile hadolint-docker
+  
+  dev:lint:renovate:
+    sources:
+      - .github/renovate.json
+    deps:
+      - dev:install-precommit
+    cmds:
+      - pre-commit run --files .github/renovate.json renovate-config-validator
+
+  dev:lint:
+    aliases:
+      - lint
+    desc: Runs linters
+    deps:
+      - dev:lint:uv-lock
+      - dev:lint:code
+      - dev:lint:dockerfile
+      - dev:lint:renovate
+
+  dev:format:code:
+    desc: Formats main project
+    sources:
+      - pyproject.toml
+      - src/**/*.py
+    cmds:
+      - ruff format
+
+  dev:format:
+    aliases:
+      - format
+    desc: Runs formatters
+    deps:
+      - dev:format:code
+
+  dev:uv-lock:
+    aliases:
+      - lock
+    desc: Updates uv lockfile
+    preconditions:
+      - sh: type "uv" &>/dev/null
+        msg: Please install uv, see https://docs.astral.sh/uv/getting-started/installation/
+    sources:
+      - pyproject.toml
+      - support/pyproject.toml
+    generates:
+      - uv.lock
+    cmds:
+      - uv lock
+  
+  dev:smoketest:
+    desc: Run the docker container smoketest
+    deps: [dev:build]
+    cmds:
+      - docker run --rm -e "RUNNER_DEBUG=1" {{.PROJECT_NAME}}:local --smoketest
+  
+  dev:test:
+    aliases:
+      - test
+    desc: Run the tests
+    cmds:
+      - uv run pytest {{.CLI_ARGS}}
+  
+  gh-action:
+    desc: Run as a GitHub action. Takes inputs as INPUT_* variables, and takes a WORKSPACE directory (defaults to cwd)
+    deps: [dev:build]
+    vars:
+      WORKSPACE: "{{.USER_WORKING_DIR}}"
+    cmds:
+      # the env vars are a subset of what is provided in a github runner context,
+      # but these should more than suffice here.
+      - |
+        mkdir -p /tmp/github/home /tmp/github/workflow
+        touch /tmp/github/workflow/event.json
+        export _FILE_COMMANDS=$(mktemp -d /tmp/github/file_commands_XXXXXX)
+        echo "Github file commands directory: ${_FILE_COMMANDS}"
+        docker run \
+          --rm \
+          --name gh-action-{{.PROJECT_NAME}} \
+          --workdir "/github/workspace" \
+          -e "SMOKESHOW_AUTH_KEY" \
+          -e "INPUT_REPORT={{.INPUT_REPORT}}" \
+          -e "INPUT_EMBEDDABLE={{.INPUT_EMBEDDABLE}}" \
+          -e "INPUT_DIV_ID={{.INPUT_DIV_ID}}" \
+          -e "HOME=/github/home" \
+          -e "GITHUB_JOB=some-job" \
+          -e "GITHUB_REF=refs/pull/42/merge" \
+          -e "GITHUB_SHA=0000000000000000000000000000000000000000" \
+          -e "GITHUB_REPOSITORY=sample/repository" \
+          -e "GITHUB_REPOSITORY_OWNER=sample" \
+          -e "GITHUB_REPOSITORY_OWNER_ID=4217" \
+          -e "GITHUB_RUN_ID=17" \
+          -e "GITHUB_RUN_NUMBER=42" \
+          -e "GITHUB_RETENTION_DAYS=90" \
+          -e "GITHUB_RUN_ATTEMPT=1" \
+          -e "GITHUB_REPOSITORY_ID=1742" \
+          -e "GITHUB_ACTOR_ID=${UID}" \
+          -e "GITHUB_ACTOR=${USER}" \
+          -e "GITHUB_TRIGGERING_ACTOR=${USER}" \
+          -e "GITHUB_WORKFLOW=Some workflow" \
+          -e "GITHUB_HEAD_REF=feature-branch-1" \
+          -e "GITHUB_BASE_REF=main" \
+          -e "GITHUB_EVENT_NAME=pull_request" \
+          -e "GITHUB_SERVER_URL=https://github.com" \
+          -e "GITHUB_API_URL=https://api.github.com" \
+          -e "GITHUB_GRAPHQL_URL=https://api.github.com/graphql" \
+          -e "GITHUB_REF_NAME=42/merge" \
+          -e "GITHUB_REF_PROTECTED=false" \
+          -e "GITHUB_REF_TYPE=branch" \
+          -e "GITHUB_WORKFLOW_REF=sample/repository/.github/workflows/some-workflow.yml@refs/heads/main" \
+          -e "GITHUB_WORKFLOW_SHA=111111111111111111111111111111" \
+          -e "GITHUB_WORKSPACE=/github/workspace" \
+          -e "GITHUB_ACTION={{.PROJECT_NAME}}" \
+          -e "GITHUB_EVENT_PATH=/github/workflow/event.json" \
+          -e "GITHUB_ACTION_REPOSITORY=mjpieters/{{.PROJECT_NAME}}" \
+          -e "GITHUB_ACTION_REF=v1" \
+          -e "GITHUB_PATH=/github/file_commands/add_path" \
+          -e "GITHUB_ENV=/github/file_commands/set_env" \
+          -e "GITHUB_STEP_SUMMARY=/github/file_commands/step_summary" \
+          -e "GITHUB_STATE=/github/file_commands/save_state" \
+          -e "GITHUB_OUTPUT=/github/file_commands/set_output" \
+          -e "RUNNER_OS=Linux" \
+          -e "RUNNER_ARCH=X64" \
+          -e "RUNNER_DEBUG" \
+          -e "RUNNER_NAME=Local runner" \
+          -e "RUNNER_ENVIRONMENT=github-hosted" \
+          -e GITHUB_ACTIONS=true \
+          -e CI=true \
+          -v "/tmp/github/home":"/github/home" \
+          -v "/tmp/github/workflow":"/github/workflow" \
+          -v "${_FILE_COMMANDS}":"/github/file_commands" \
+          -v "{{.WORKSPACE}}":"/github/workspace" \
+          {{.PROJECT_NAME}}:local {{.CLI_ARGS}}
+
+  default:
+    deps:
+      - dev:format
+      - dev:lint
+      - dev:build
+      - dev:test

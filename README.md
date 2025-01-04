@@ -1,6 +1,6 @@
 # Pyright Analysis Action
 
-Generate a [Pyright Analysis type completeness visualisation](https://github.org/mjpieters/pyright-analysis) in your Python project Github workflows, and share this graph in a PR comment or the workflow summary, from a [pyright type completeness report](https://microsoft.github.io/pyright/#/typed-libraries?id=verifying-type-completeness).
+Generate a [Pyright Analysis type completeness visualisation](https://github.com/mjpieters/pyright-analysis) in your Python project Github workflows, and share this graph in a PR comment or the workflow summary, from a [pyright type completeness report](https://microsoft.github.io/pyright/#/typed-libraries?id=verifying-type-completeness).
 
 ## Usage
 
@@ -80,6 +80,22 @@ The pyright analysis action looks for a `SMOKESHOW_AUTH_KEY` environment variabl
 | `html_url` | The URL of the interactive graph. |
 | `preview_url` | The URL of the preview image (SVG). |
 | `expiration` | ISO8601-formatted date time value for when the published page expires. |
+
+## Development
+
+This project uses [`uv`](https://docs.astral.sh/uv/) to handle Python dependencies and environments; use `uv sync` to get an up-to-date virtualenv with all dependencies. This includes development dependencies such as [Ruff](https://docs.astral.sh/ruff/) (used for linting and formatting) and [Pyright](https://microsoft.github.io/pyright/) (used to validate type annotations).
+
+In addition, common tasks are defined in a taskfile; [install Task](https://taskfile.dev/) to use these. Run `task --list`
+
+### Linting and formatting
+
+While PRs and commits on GitHub are checked for linting and formatting issues, it's easier to check for issues locally first. After running `uv sync`, run `uv run pre-commit install` or `task dev:install-precommit` to install [pre-commit](https://pre-commit.com/) hooks that will run these tools and format your changes automatically on commits. These hooks also run `uv sync` whenever you working tree changes.
+
+The taskfile includes specific linting and formatting tasks.
+
+### Testing
+
+This project uses `pytest` to run its tests: `uv run pytest` or `task dev:test`
 
 <!--
 TODO:
