@@ -1,4 +1,5 @@
 import asyncio
+import os
 from typing import Annotated
 
 import typer
@@ -9,7 +10,9 @@ from .smokeshow import upload
 from .utils import set_outputs
 
 app = typer.Typer(
-    context_settings=dict(auto_envvar_prefix="INPUT"), add_completion=False
+    context_settings=dict(auto_envvar_prefix="INPUT"),
+    add_completion=False,
+    pretty_exceptions_enable=bool(os.environ.get("RUNNER_DEBUG")),
 )
 
 
