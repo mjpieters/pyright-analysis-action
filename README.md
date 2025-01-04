@@ -85,7 +85,7 @@ The pyright analysis action looks for a `SMOKESHOW_AUTH_KEY` environment variabl
 
 This project uses [`uv`](https://docs.astral.sh/uv/) to handle Python dependencies and environments; use `uv sync` to get an up-to-date virtualenv with all dependencies. This includes development dependencies such as [Ruff](https://docs.astral.sh/ruff/) (used for linting and formatting) and [Pyright](https://microsoft.github.io/pyright/) (used to validate type annotations).
 
-In addition, common tasks are defined in a taskfile; [install Task](https://taskfile.dev/) to use these. Run `task --list`
+In addition, common tasks are defined in a taskfile; [install Task](https://taskfile.dev/) to use these. Run `task --list` to see what tasks are available.
 
 ### Linting and formatting
 
