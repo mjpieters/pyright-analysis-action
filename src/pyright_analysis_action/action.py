@@ -47,7 +47,9 @@ def action(
     results = schema.PyrightJsonResults.model_validate_json(data)
     figure = treemap.to_treemap(results.type_completeness)
 
-    html_page: str = figure.to_html(full_html=not embeddable, div_id=div_id)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+    html_page: str = figure.to_html(  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+        full_html=not embeddable, div_id=div_id, include_plotlyjs="cdn"
+    )
     assert isinstance(html_page, str)
     preview = figure.to_image("svg", scale=0.5)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
     assert isinstance(preview, bytes)
