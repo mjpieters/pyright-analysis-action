@@ -73,8 +73,8 @@ class SmokeshowCreateResponse(BaseModel):
     def __str__(self) -> str:
         lines = [
             self.message,
-            f"    created at:          {self.site_creation.isoformat(timespec="seconds")}",
-            f"    expires at:          {self.site_expiration.isoformat(timespec="seconds")}",
+            f"    created at:          {self.site_creation.isoformat(timespec='seconds')}",
+            f"    expires at:          {self.site_expiration.isoformat(timespec='seconds')}",
             f"    sites created (24h): {self.sites_created_24h}",
             f"    upload to:           {self.url}",
         ]
