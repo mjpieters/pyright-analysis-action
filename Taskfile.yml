@@ -4,8 +4,23 @@ output: prefixed
 
 vars:
   PROJECT_NAME: pyright-analysis-action
+  GRAPHQL_SCHEMA_FILE: github.schema.graphql
 
 tasks:
+  graphql:download_schema:
+    desc: Download the Github GraphQL schema (if it is newer)
+    generates:
+      - "{{.GRAPHQL_SCHEMA_FILE}}"
+    cmds:
+      # only download if the last-modified header is newer than
+      # the timestamp on the local copy. GitHub doesn't provide
+      # an ETag response header for this resource.
+      - |
+        curl -sS \
+          -o "{{.GRAPHQL_SCHEMA_FILE}}" \
+          -z "{{.GRAPHQL_SCHEMA_FILE}}" \
+          https://docs.github.com/public/fpt/schema.docs.graphql
+  
   dev:build:
     aliases:
       - build
@@ -120,6 +135,8 @@ tasks:
     aliases:
       - test
     desc: Run the tests
+    deps:
+      - graphql:download_schema
     cmds:
       - uv run pytest {{.CLI_ARGS}}
   

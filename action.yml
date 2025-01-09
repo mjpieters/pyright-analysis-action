@@ -9,17 +9,38 @@ branding:
 inputs:
   report:
     description: >
-      Path to the Pyright verifytypes report. Must be in JSON format, so produced with the `--outputjson` flag.
+      Path to the Pyright verifytypes report. Must be in JSON format, so
+      produced with the `--outputjson` flag.
     required: true
   embeddable:
     description: >
-      Normally, the graph is generated as a full, stand-alone HTML file. If you want to embed the graph in
-      a larger web page, set this option to 'true' (or '1', 'on', or 'yes') to only output the report in
-      a `<div>` tag. Note that when you provide a page template, this option is ignored.
+      Normally, the graph is generated as a full, stand-alone HTML file. If you
+      want to embed the graph in a larger web page, set this option to 'true'
+      (or '1', 'on', or 'yes') to only output the report in a `<div>` tag. Note
+      that when you provide a page template, this option is ignored.
+    default: "false"
   div_id:
     description: >
-      Provide a value for the `<div>` tag that wraps the report in the generated HTML page. If omitted, a
-      random UUID is used.
+      Provide a value for the `<div>` tag that wraps the report in the generated
+      HTML page. If omitted, a random UUID is used.
+  comment_on_pr:
+    description: >
+      If set to `true` (or `yes`, or `1`, `t` or `y`), and the current workflow
+      run was triggered by a `pull_request` or `workflow_run` event indirectly
+      triggered by a `pull_request`, then a comment will be added to that pull
+      request. If there already is a comment posted by this action then the
+      existing comment is updated instead. Requires a github token with either
+      `issues: write` or `pull-requests: write` permission. Note that a
+      `pull_request` workflow running in a forked repo will only get a read-only
+      token so you'll need to put this action in a `workflow_run` workflow
+      instead. See the action documentation for details.
+    default: "false"
+  github_token:
+    description: >
+      The github token to use when posting a comment on a PR. Defaults to the
+      `GITHUB_TOKEN` secret for this workflow job.
+    default: ${{ github.token }}
+
 
 outputs:
   html_url:
