@@ -4,6 +4,7 @@ version = "0.0.0"
 requires-python = ">=3.13"
 dependencies = [
     "aiohttp>=3.11.11",
+    "githubkit>=0.12.4",
     "humanize>=4.11.0",
     "pyright-analysis==1.0.0rc3",
     "tenacity>=9.0.0",
@@ -17,6 +18,9 @@ dev = [
     "pytest>=8.3.4",
     "ruff>=0.9.0",
     "aioresponses>=0.7.7",
+    "graphql-core>=3.3.0a6",
+    "respx>=0.22.0",
+    "pytest-asyncio>=0.25.2",
 ]
 
 [tool.uv]
@@ -53,6 +57,7 @@ venv = ".venv"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov --cov-report xml --cov-report term"
+asyncio_mode = "auto"
 
 [tool.ruff.lint]
 extend-select = [

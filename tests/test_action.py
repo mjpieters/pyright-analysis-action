@@ -9,6 +9,7 @@ import typer
 from yarl import URL
 
 from pyright_analysis_action.action import action
+from pyright_analysis_action.comment import NotCommenting
 
 
 class TestAction:
@@ -64,4 +65,51 @@ class TestAction:
             html_url=html_url,
             preview_url=preview_url,
             expiration=expiration.isoformat(),
+            comment_url=None,
+        )
+
+    def test_not_commenting(self) -> None:
+        with (
+            patch(
+                "pyright_analysis_action.comment.Commenter.from_event",
+                autospec=True,
+                side_effect=NotCommenting("mocked"),
+            ),
+            patch("typer.secho", autospec=True) as mock_secho,
+        ):
+            action(
+                self.report,
+                comment_on_pr=True,
+                event_name="some_event",
+                event_file=MagicMock(),
+            )
+        mock_secho.assert_any_call("Skipping posting a PR comment: mocked", dim=True)
+
+    def test_commenting(self) -> None:
+        output = MagicMock()
+        with (
+            patch(
+                "pyright_analysis_action.action.Commenter",
+                autospec=True,
+                side_effect=NotCommenting("mocked"),
+            ) as mocked_commenter,
+            patch("typer.secho", autospec=True) as mock_secho,
+        ):
+            post_call = mocked_commenter.from_event.return_value.post_or_update_comment
+            post_call.return_value = "http://example.com/"
+            action(
+                self.report,
+                comment_on_pr=True,
+                event_name="some_event",
+                event_file=MagicMock(),
+                output=output,
+            )
+        mock_secho.assert_any_call("Comment posted or updated at http://example.com/")
+        expiration, html_url, preview_url = self.upload_result
+        self.mock_set_outputs.assert_called_once_with(
+            output,
+            html_url=html_url,
+            preview_url=preview_url,
+            expiration=expiration.isoformat(),
+            comment_url="http://example.com/",
         )

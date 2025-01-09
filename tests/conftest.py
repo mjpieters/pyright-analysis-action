@@ -1,4 +1,8 @@
+from collections.abc import AsyncIterable
+
 import pytest
+import respx
+from githubkit import GitHub
 
 
 @pytest.fixture
@@ -111,3 +115,14 @@ def pyright_json_report() -> str:
     }
 }
 """
+
+
+@pytest.fixture
+async def github() -> AsyncIterable[GitHub]:
+    async with GitHub("mocked_auth") as client:
+        yield client
+
+
+@pytest.fixture
+def graphql_mock(respx_mock: respx.MockRouter) -> respx.Route:
+    return respx_mock.post(url="https://api.github.com/graphql", name="graphql")
