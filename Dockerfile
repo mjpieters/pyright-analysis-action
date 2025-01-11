@@ -20,7 +20,7 @@ ENV LIBEXPAT1_VERSION="2.5.0-1+deb12u1"
 # renovate: release=bookworm depName=libfontconfig1
 ENV LIBFONTCONFIG1_VERSION="2.14.1-4"
 # renovate: release=bookworm depName=libuuid1
-ENV LIBUUID1_VERSION="2.38.1-5+deb12u2"
+ENV LIBUUID1_VERSION="2.38.1-5+deb12u3"
 
 # Headless chrome, used to convert graphs to static images
 RUN apt-get update -y \
