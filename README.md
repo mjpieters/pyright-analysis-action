@@ -42,7 +42,7 @@ jobs:
           --verifytypes $PROJECT_NAME > type_completeness_report.json || true
 
     - name: Generate report visualisation
-      uses: mjpieters/pyright-analysis-action@v1
+      uses: mjpieters/pyright-analysis-action@v0.2.0
       env:
         # Smokeshow authorisation key for your project. Optional, but recommended.
         # See documentation for how to get one.
@@ -149,7 +149,7 @@ jobs:
         run-id: ${{ github.event.workflow_run.id }}
 
     - name: Generate report visualisation
-      uses: mjpieters/pyright-analysis-action@v1
+      uses: mjpieters/pyright-analysis-action@v0.2.0
       env:
         # Smokeshow authorisation key for your project. Optional, but recommended.
         # See documentation for how to get one.
