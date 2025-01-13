@@ -12,13 +12,6 @@ inputs:
       Path to the Pyright verifytypes report. Must be in JSON format, so
       produced with the `--outputjson` flag.
     required: true
-  embeddable:
-    description: >
-      Normally, the graph is generated as a full, stand-alone HTML file. If you
-      want to embed the graph in a larger web page, set this option to 'true'
-      (or '1', 'on', or 'yes') to only output the report in a `<div>` tag. Note
-      that when you provide a page template, this option is ignored.
-    default: "false"
   div_id:
     description: >
       Provide a value for the `<div>` tag that wraps the report in the generated
