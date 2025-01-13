@@ -41,13 +41,10 @@ class TestAction:
             self.mock_upload.return_value = self.upload_result
             yield
 
-    @pytest.mark.parametrize("embeddable", (False, True))
     @pytest.mark.parametrize("div_id", (None, "some-div-id"))
-    def test_html_args_passthrough(self, embeddable: bool, div_id: str | None) -> None:
-        action(self.report, embeddable=embeddable, div_id=div_id)
-        self.mock_to_html.assert_called_once_with(
-            full_html=not embeddable, div_id=div_id, include_plotlyjs="cdn"
-        )
+    def test_html_args_passthrough(self, div_id: str | None) -> None:
+        action(self.report, div_id=div_id)
+        self.mock_to_html.assert_called_once_with(div_id=div_id, include_plotlyjs="cdn")
 
     @pytest.mark.parametrize("smokeshow_auth_key", (None, "some-test-value"))
     def test_upload_key_passthrough(self, smokeshow_auth_key: str | None) -> None:

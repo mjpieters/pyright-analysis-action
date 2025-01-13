@@ -35,7 +35,6 @@ View the [interactive graph for `{package_name}`]({html_url}).
 @app.command()
 def action(
     report: Annotated[typer.FileText, typer.Argument(envvar="INPUT_REPORT")],
-    embeddable: Annotated[bool, typer.Option()] = False,
     div_id: Annotated[str | None, typer.Option()] = None,
     comment_on_pr: Annotated[bool, typer.Option()] = False,
     smokeshow_auth_key: Annotated[
@@ -62,7 +61,7 @@ def action(
         figure = treemap.to_treemap(results.type_completeness)
 
         html_page: str = figure.to_html(  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
-            full_html=not embeddable, div_id=div_id, include_plotlyjs="cdn"
+            div_id=div_id, include_plotlyjs="cdn"
         )
         assert isinstance(html_page, str)
         preview = figure.to_image("svg", scale=0.5)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
