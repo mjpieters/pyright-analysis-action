@@ -4,6 +4,7 @@ from io import StringIO
 from typing import cast
 from unittest.mock import MagicMock, patch
 
+import click
 import pytest
 import typer
 from yarl import URL
@@ -44,7 +45,9 @@ class TestAction:
     @pytest.mark.parametrize("div_id", (None, "some-div-id"))
     def test_html_args_passthrough(self, div_id: str | None) -> None:
         action(self.report, div_id=div_id)
-        self.mock_to_html.assert_called_once_with(div_id=div_id, include_plotlyjs="cdn")
+        self.mock_to_html.assert_called_once_with(
+            div_id=div_id, full_html=True, include_plotlyjs="cdn"
+        )
 
     @pytest.mark.parametrize("smokeshow_auth_key", (None, "some-test-value"))
     def test_upload_key_passthrough(self, smokeshow_auth_key: str | None) -> None:
@@ -52,6 +55,31 @@ class TestAction:
         self.mock_upload.assert_called_once_with(
             smokeshow_auth_key, "<html/>", b"<svg/>"
         )
+
+    def test_template_and_template_file(self):
+        with pytest.raises(click.UsageError):
+            action(
+                self.report,
+                template="<html><head/>{{graph}}</html>",
+                template_file=MagicMock(),
+            )
+
+    @pytest.mark.parametrize("template", ("<html/>", StringIO("<html/>")))
+    def test_template_lacking_slot(self, template: str | typer.FileText) -> None:
+        with pytest.raises(click.UsageError):
+            action(self.report, template=template) if isinstance(
+                template, str
+            ) else action(self.report, template_file=template)
+
+    @pytest.mark.parametrize(
+        "template", ("<html>{{graph}}</html>", StringIO("<html>{{graph}}</html>"))
+    )
+    def test_template(self, template: str | typer.FileText) -> None:
+        self.mock_to_html.return_value = "<div/>"
+        action(self.report, template=template) if isinstance(template, str) else action(
+            self.report, template_file=template
+        )
+        self.mock_upload.assert_called_once_with(None, "<html><div/></html>", b"<svg/>")
 
     def test_outputs_set(self):
         output = MagicMock()

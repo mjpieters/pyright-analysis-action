@@ -65,6 +65,33 @@ uvx smokeshow generate-key
 
 The pyright analysis action looks for a `SMOKESHOW_AUTH_KEY` environment variable when publishing. It will generate a new key if none is set, but take into account that generating a new key every time can take several minutes each run.
 
+## Templating
+
+The generated HTML page can be templated, either by providing a `template` string input, or a `template_file` path to a template file. The template must contain a `{{ graph }}` slot; the amount of whitespace following the opening `{{` braces and preceding the closing `}}` braces doesn't matter. When a template is used, the generated graph is inserted as a plain `<div>` element, containing
+everything needed to display the graph. The inserted HTML has the following general structure:
+
+```html
+<div>
+  <script type="text/javascript"><!-- graph prepare --></script>
+  <script charset="utf-8" src="<!-- CDN URL for graphing library -->"></script>
+  <div id="<!-- value of the div_id input or a random UUID value if no div_id is provided -->" class="plotly-graph-div" style="height:100%; width:100%;"></div>
+  <script type="text/javascript"><!-- graph setup --></script>
+</div>
+```
+
+The `div_id` input lets you set a specific `id` value for the inner `<div>` tag; if not provided a UUID value is generated.
+
+The default template is:
+
+```html
+<html>
+<head><meta charset="utf-8" /></head>
+<body>
+    {{ graph }}
+</body>
+</html>
+```
+
 ## Commenting on Pull Requests
 
 The action can post the summary as a comment on a triggering pull request, by setting `comment_on_pr` to `true`. You need to make sure that a github token with `pull-requests: write` permission is available. The latter means that you can't use this action in a `pull_requests` event when the PR is pushed from a fork of the repository, however.
@@ -166,6 +193,8 @@ jobs:
 |------|----------|-------------|
 | `report` | yes | Path to the Pyright verifytypes report. Must be in JSON format, so produced with the `--outputjson` flag. |
 | `div_id` | | Provide a value for the `<div>` tag that wraps the report in the generated HTML page. If omitted, a random UUID is used. |
+| `template` | | A string template for the final HTML page. The template must contain the string `{{ graph }}`, which will be replaced with a `<div>` HTML element containing the generated graph. Whitespace following the `{{` opening braces and preceding the  `}}` closing braces is optional, any number of Unicode whitespace characters are accepted, so `{{graph}}` is equivalent to `{{   \n graph \t  }}`. This option is mutually exclusive with `template_file`.
+| `template_file` | | Pathname to a file containing the template for the final HTML page. The template must contain the string `{{ graph }}`, which will be replaced with a `<div>` HTML element containing the generated graph. Whitespace following the `{{` opening braces and preceding the  `}}` closing braces is optional, any number of Unicode whitespace characters are accepted, so `{{graph}}` is equivalent to `{{   \n graph \t  }}`. This option is mutually exclusive with `template`.
 | `comment_on_pr` | | If set to `true` (or `yes`, or `1`, `t` or `y`), and the current workflow run was triggered by a `pull_request` or `workflow_run` event indirectly triggered by a `pull_request`, then a comment will be added to that pull request. If there already is a comment posted by this action then the existing comment is updated instead. Requires a github token with either `pull-requests: write` permission. Note that a `pull_request` workflow running in a forked repo will only get a read-only token so you'll need to put this action in a `workflow_run` workflow instead. See the action documentation for details. |
 | `github_token` | | The github token to use when posting a comment on a PR. Defaults to the `GITHUB_TOKEN` secret for this workflow job. |
 
