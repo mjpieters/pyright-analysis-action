@@ -1,8 +1,10 @@
 import asyncio
 import logging
 import os
+import re
 from typing import Annotated
 
+import click
 import typer
 from githubkit import ActionAuthStrategy, GitHub
 from pyright_analysis import schema, treemap
@@ -13,6 +15,7 @@ from .comment import Commenter, NotCommenting
 from .smokeshow import upload
 
 DEBUG = bool(os.environ.get("RUNNER_DEBUG"))
+TEMPLATE_SLOT = re.compile(r"\{\{\s*graph\s*\}\}")
 
 app = typer.Typer(
     context_settings=dict(auto_envvar_prefix="INPUT"),
@@ -36,6 +39,8 @@ View the [interactive graph for `{package_name}`]({html_url}).
 def action(
     report: Annotated[typer.FileText, typer.Argument(envvar="INPUT_REPORT")],
     div_id: Annotated[str | None, typer.Option()] = None,
+    template: Annotated[str | None, typer.Option()] = None,
+    template_file: Annotated[typer.FileText | None, typer.Option()] = None,
     comment_on_pr: Annotated[bool, typer.Option()] = False,
     smokeshow_auth_key: Annotated[
         str | None, typer.Option(envvar="SMOKESHOW_AUTH_KEY")
@@ -55,15 +60,29 @@ def action(
     jobid: Annotated[str | None, typer.Option(envvar="GITHUB_JOB")] = None,
     _smoketest: SmokeTest = None,
 ) -> None:
+    if template is not None and template_file is not None:
+        raise click.UsageError(
+            "Provide either a template string or a template file, not both"
+        )
+    if template is None and template_file is not None:
+        template = template_file.read()
+    if template is not None and TEMPLATE_SLOT.search(template) is None:
+        raise click.UsageError(
+            "Can't find a '{{ graph }}' slot in the provided template."
+        )
+
     async def process_graph() -> None:
         data = report.read()
         results = schema.PyrightJsonResults.model_validate_json(data)
         figure = treemap.to_treemap(results.type_completeness)
 
         html_page: str = figure.to_html(  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
-            div_id=div_id, include_plotlyjs="cdn"
+            div_id=div_id, full_html=(template is None), include_plotlyjs="cdn"
         )
         assert isinstance(html_page, str)
+        if template is not None:
+            html_page = TEMPLATE_SLOT.sub(html_page, template, 1)
+
         preview = figure.to_image("svg", scale=0.5)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
         assert isinstance(preview, bytes)
 

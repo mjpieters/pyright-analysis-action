@@ -14,8 +14,26 @@ inputs:
     required: true
   div_id:
     description: >
-      Provide a value for the `<div>` tag that wraps the report in the generated
-      HTML page. If omitted, a random UUID is used.
+      Provide a value for the `id` attribute on the `<div>` tag that wraps the
+      report in the generated HTML page. If omitted, a random UUID is used.
+  template:
+    description: >
+      A string template for the final HTML page. The template must contain the
+      string `{{ graph }}`, which will be replaced with a `<div>` HTML element
+      containing the generated graph. Whitespace following the `{{` opening
+      braces and preceding the  `}}` closing braces is optional, any number of
+      Unicode whitespace characters are accepted, so `{{graph}}` is equivalent
+      to `{{   \n graph \t  }}`. This option is mutually exclusive with
+      `template_file`.
+  template_file:
+    description: >
+      Pathname to a file containing the template for the final HTML page. The
+      template must contain the string `{{ graph }}`, which will be replaced
+      with a `<div>` HTML element containing the generated graph. Whitespace
+      following the `{{` opening braces and preceding the  `}}` closing braces
+      is optional, any number of Unicode whitespace characters are accepted, so
+      `{{graph}}` is equivalent to `{{   \n graph \t  }}`. This option is
+      mutually exclusive with `template`.
   comment_on_pr:
     description: >
       If set to `true` (or `yes`, or `1`, `t` or `y`), and the current workflow
