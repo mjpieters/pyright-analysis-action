@@ -6,7 +6,7 @@ dependencies = [
     "aiohttp>=3.11.11",
     "githubkit>=0.12.4",
     "humanize>=4.11.0",
-    "pyright-analysis==1.0.0rc3",
+    "pyright-analysis==1.0.0",
     "tenacity>=9.0.0",
 ]
 
