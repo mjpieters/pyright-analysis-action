@@ -9,7 +9,11 @@ on:
 env:
   FORCE_COLOR: 1
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_REF: ghcr.io/${{ github.repository }}
+  # renovate: datasource=github-releases depName=docker/buildx
+  BUILDX_VERSION: "0.20.1"
+  # renovate: datasource=docker depName=moby/buildkit versioning=docker
+  BUILDKIT_VERSION: "v0.19.0@sha256:14aa1b4dd92ea0a4cd03a54d0c6079046ea98cd0c0ae6176bdd7036ba370cbbe"
 
 permissions:
   contents: read
@@ -20,7 +24,7 @@ jobs:
     name: "Python linting"
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      
+
     - name: Install uv
       uses: astral-sh/setup-uv@b5f58b2abc5763ade55e4e9d0fe52cd1ff7979ca # v5.2.1
       with:
@@ -31,7 +35,7 @@ jobs:
       uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
       with:
         python-version-file: "pyproject.toml"
-    
+
     - name: Check lock is up-to-date
       run: |
         uv lock --check
@@ -62,10 +66,10 @@ jobs:
     name: "Docker linting"
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-  
+
     - uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf # v3.1.0
       name: Lint Dockerfile
-  
+
   tests:
     runs-on: ubuntu-latest
     name: Python tests
@@ -78,12 +82,12 @@ jobs:
       with:
         enable-cache: true
         cache-dependency-glob: "uv.lock"
-  
+
     - name: Set up Python 🐍
       uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
       with:
         python-version: 3.13
-  
+
     - name: Install dependencies
       run: |
         uv sync
@@ -118,21 +122,64 @@ jobs:
 
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-  
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@6524bf65af31da8d45b59e8c27de4bd072b392f5 # v3.8.0
+      with:
+        version: v${{ env.BUILDX_VERSION }}
+        driver-opts: image=moby/buildkit:${{ env.BUILDKIT_VERSION }}
+
+    - name: Docker uv cache
+      uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
+      id: docker-uv-cache
+      with:
+        path: cache-uv
+        key: cache-uv-${{ hashFiles('Dockerfile', 'uv.lock', 'pyproject.toml', 'src/**/*.py') }}
+
+    - name: Docker apt cache
+      uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
+      id: docker-apt-cache
+      with:
+        path: |
+          var-cache-apt
+          var-lib-apt
+        key: cache-apt-${{ hashFiles('Dockerfile') }}
+
+    - name: Inject uv cache into docker
+      uses: reproducible-containers/buildkit-cache-dance@5b6db76d1da5c8b307d5d2e0706d266521b710de # v3.1.2
+      with:
+        cache-map: |
+          {
+            "cache-uv": "/root/.cache/uv"
+          }
+        skip-extraction: ${{ steps.docker-uv-cache.outputs.cache-hit }}
+
+    - name: Inject apt cache into docker
+      uses: reproducible-containers/buildkit-cache-dance@5b6db76d1da5c8b307d5d2e0706d266521b710de # v3.1.2
+      with:
+        cache-map: |
+          {
+            "var-cache-apt": "/var/cache/apt",
+            "var-lib-apt": "/var/lib/apt"
+          }
+        skip-extraction: ${{ steps.docker-apt-cache.outputs.cache-hit }}
+
     - name: Build test image
       uses: docker/build-push-action@ca877d9245402d1537745e0e356eab47c3520991 # v6.13.0
       with:
         load: true
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:test
+        tags: ${{ env.IMAGE_REF }}:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
         build-args: |
           VERSION="0.1.0dev0+test"
-    
+
     - name: Image smoketest
       env:
-        TEST_TAG: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:test
+        TEST_TAG: ${{ env.IMAGE_REF }}:test
       run: |
         docker run --rm "${TEST_TAG}" --smoketest
-    
+
     - name: Extract docker image tag
       id: image_tag
       run: |
@@ -146,7 +193,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96 # v5.6.1
       with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        images: ${{ env.IMAGE_REF }}
         tags: |
             type=semver,pattern=v{{version}},value=${{ steps.image_tag.outputs.image_version }}
             type=ref,event=branch
@@ -165,6 +212,8 @@ jobs:
       with:
         context: .
         push: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         annotations: ${{ steps.meta.outputs.annotations }}
@@ -175,5 +224,5 @@ jobs:
       if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
       uses: actions/attest-build-provenance@520d128f165991a6c774bcb264f323e3d70747f4 # v2.2.0
       with:
-        subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+        subject-name: ${{ env.IMAGE_REF }}
         subject-digest: ${{ steps.build-image.outputs.digest }}

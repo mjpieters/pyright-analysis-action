@@ -32,10 +32,20 @@
       "customType": "regex",
       "fileMatch": ["(^|/)Dockerfile$"],
       "matchStrings": [
-        "#\\s*renovate:\\s*?(release=(?<release>.*?))?\\s*depName=(?<depName>.*?)?\\sENV .*?_VERSION=\"(?<currentValue>.*)\""
+        "#\\s*renovate:\\s*?(release=(?<release>.*?))?\\s*depName=(?<depName>.*?)?\\s(?:ENV|ARG) .*?_VERSION=\"(?<currentValue>.*)\""
       ],
       "registryUrlTemplate": "https://deb.debian.org/debian?{{#if release }}release={{release}}{{else}}suite=stable{{/if}}&components=main,contrib,non-free&binaryArch=amd64",
       "datasourceTemplate": "deb"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["(^|/).github/workflows/.*\\.yml$"],
+      "matchStrings": [
+        "#\\s*renovate:\\s*?datasource=(?<datasource>.*?)\\s*depName=(?<depName>.*?)(\\s*versioning=(?<versioning>.*?))?(?<indentation>\\s+)(?<envVarName>.+?_VERSION):\\s*\"(?<currentValue>.*)(?:@(?<currentDigest>sha256:[a-f0-8]+))?\""
+      ],
+      "versioningTemplate": "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}",
+      "datasourceTemplate": "{{{datasource}}}",
+      "autoReplaceStringTemplate": "// renovate: datasource={{{datasource}}} depName={{{depName}}}{{#if versioning }}versioning={{{versioning}}}{{/if}}{{{indentation}}}{{{envVarName}}}: \"{{{newValue}}}{{#if newDigest}}@{{{newDigest}}}{{/if}}\""
     }
   ],
   "platformAutomerge": true
