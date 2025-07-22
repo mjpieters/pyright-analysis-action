@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.17.1@sha256:38387523653efa0039f8e1c89bb74a30504e76ee9f565e25c9a09841f9427b05
-FROM python:3.13.5-slim-bookworm@sha256:ed8ae2e43d547b1d54b178a2c2305b5b24d911e58f907b6f178107a391c7d576
+FROM python:3.13.5-slim-bookworm@sha256:1020ca463dc51c26bbad49de85dbb2986d93b71050102f3fa2a7f0fc4c2ea81e
 ARG VERSION=0.1.0dev0
 
 ENV UV_COMPILE_BYTECODE=1 \
