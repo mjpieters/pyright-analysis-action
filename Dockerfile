@@ -16,7 +16,7 @@ ENV LIBNSPR4_VERSION="2:4.35-1"
 # renovate: release=bookworm depName=libnss3
 ENV LIBNSS3_VERSION="2:3.87.1-1+deb12u1"
 # renovate: release=bookworm depName=libexpat1
-ENV LIBEXPAT1_VERSION="2.5.0-1+deb12u1"
+ENV LIBEXPAT1_VERSION="2.5.0-1+deb12u2"
 # renovate: release=bookworm depName=libfontconfig1
 ENV LIBFONTCONFIG1_VERSION="2.14.1-4"
 # renovate: release=bookworm depName=libuuid1
