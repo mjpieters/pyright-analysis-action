@@ -31,7 +31,7 @@ RUN apt-get update -y \
         libfontconfig1=${LIBFONTCONFIG1_VERSION} \
         libuuid1=${LIBUUID1_VERSION} \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-COPY --from=docker.io/chromedp/headless-shell:stable@sha256:ba8ff0f0842e860751619b69f94184c13e134948f49fa77ec1ec15733c945484 \
+COPY --from=docker.io/chromedp/headless-shell:stable@sha256:478f1105d06e921d7652c18ecf6d1fc81d9bf3c484ef39562b8e7760d42d71a8 \
     /headless-shell/ \
     /headless-shell/
 
