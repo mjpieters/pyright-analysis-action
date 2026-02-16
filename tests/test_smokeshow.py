@@ -14,8 +14,10 @@ from aiohttp import (
 from aioresponses import aioresponses as _AioResponses
 from yarl import URL
 
+from pyright_analysis_action import __version__
 from pyright_analysis_action.smokeshow import (
     SMOKESHOW_CREATE,
+    USER_AGENT,
     SmokeshowCreateResponse,
     SmokeshowUploadResponse,
     generate_smokeshow_key,
@@ -114,6 +116,7 @@ class TestSmokeshowUpload:
         aioresponses: AioResponses,
         upload_response_factory: UploadResponseFactory,
         smokeshow_key: str | None,
+        secret_key: str,
     ) -> None:
         self.mock_generate_key.return_value = "random-generated-test-key"
         upload_response_factory("index.html")
@@ -124,22 +127,25 @@ class TestSmokeshowUpload:
         else:
             assert not self.mock_generate_key.called
         expected_authorization = smokeshow_key or "random-generated-test-key"
+        base_headers = {"User-Agent": USER_AGENT.format(version=__version__)}
         aioresponses.assert_called_with(
             SMOKESHOW_CREATE,
             hdrs.METH_POST,
-            headers={"Authorisation": expected_authorization},
+            headers=base_headers | {"Authorisation": expected_authorization},
         )
         aioresponses.assert_called_with(
             "https://test.example.com/foobar/index.html",
             hdrs.METH_POST,
-            headers={hdrs.CONTENT_TYPE: "text/html"},
+            headers=base_headers
+            | {"Authorisation": secret_key, hdrs.CONTENT_TYPE: "text/html"},
             data=b"<html/>",
             allow_redirects=True,
         )
         aioresponses.assert_called_with(
             "https://test.example.com/foobar/preview.svg",
             hdrs.METH_POST,
-            headers={hdrs.CONTENT_TYPE: "image/svg+xml"},
+            headers=base_headers
+            | {"Authorisation": secret_key, hdrs.CONTENT_TYPE: "image/svg+xml"},
             data=b"<svg/>",
             allow_redirects=True,
         )
