@@ -1,29 +1,38 @@
 default_install_hook_types:
-  - pre-commit
-  - post-checkout
-  - post-merge
-  - post-rewrite
+- pre-commit
+- post-checkout
+- post-merge
+- post-rewrite
 repos:
-  - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.10.3
-    hooks:
-      - id: uv-lock
-      - id: uv-sync
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.1
-    hooks:
-      - id: ruff-format
-      - id: ruff
-  - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.408
-    hooks:
-      - id: pyright
-  - repo: https://github.com/renovatebot/pre-commit-hooks
-    rev: 41.173.1
-    hooks:
-      - id: renovate-config-validator
-  - repo: https://github.com/hadolint/hadolint
-    rev: v2.14.0
-    hooks:
-      - id: hadolint-docker
-        entry: ghcr.io/hadolint/hadolint:v2.12.0 hadolint
+- repo: https://github.com/astral-sh/uv-pre-commit
+  rev: 0.10.3
+  hooks:
+  - id: uv-lock
+  - id: uv-sync
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.15.1
+  hooks:
+  - id: ruff-format
+  - id: ruff
+- repo: https://github.com/RobertCraigie/pyright-python
+  rev: v1.1.408
+  hooks:
+  - id: pyright
+- repo: https://github.com/renovatebot/pre-commit-hooks
+  rev: 41.173.1
+  hooks:
+  - id: renovate-config-validator
+- repo: https://github.com/hadolint/hadolint
+  rev: v2.14.0
+  hooks:
+  - id: hadolint-docker
+    entry: ghcr.io/hadolint/hadolint:v2.12.0 hadolint
+- repo: https://github.com/zizmorcore/zizmor-pre-commit
+  rev: v1.22.0
+  hooks:
+  - id: zizmor
+- repo: https://github.com/rhysd/actionlint
+  rev: v1.7.10
+  hooks:
+  - id: actionlint
+
