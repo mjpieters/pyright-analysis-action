@@ -52,7 +52,11 @@
     {
       "description": "These packages are not abandoned just yet",
       "matchPackageNames": [
-        "hadolint/hadolint-action"
+        "aioresponses",
+        "hadolint/hadolint-action",
+        "pyright-analysis",
+        "re-actors/alls-green",
+        "respx"
       ],
       "abandonmentThreshold": "5 years"
     }
