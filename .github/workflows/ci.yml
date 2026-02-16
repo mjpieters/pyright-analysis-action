@@ -11,27 +11,41 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
-permissions:
-  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
 
 jobs:
   python-lint:
     runs-on: ubuntu-latest
     name: "Python linting"
+    permissions:
+      contents: read
+    env:
+      UV_FROZEN: true
+
     steps:
     - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-      
-    - name: Install uv
-      uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
       with:
-        enable-cache: true
-        cache-dependency-glob: "uv.lock"
+        persist-credentials: false
 
     - name: Set up Python 🐍
+      id: python
       uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version-file: "pyproject.toml"
-    
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+      with:
+        enable-cache: | # zizmor: ignore[cache-poisoning] cache is disabled when publishing to prevent poisoning
+          ${{ github.ref_type == 'tag' && 'false' || 'auto' }}
+        cache-dependency-glob: "uv.lock"
+        python-version: ${{ steps.python.outputs.python-path }}
+        activate-environment: true
+
     - name: Check lock is up-to-date
       run: |
         uv lock --check
@@ -39,7 +53,6 @@ jobs:
     - name: Install dependencies
       run: |
         uv sync
-        echo "$PWD/.venv/bin" >> $GITHUB_PATH
 
     - name: Check file formatting
       uses: astral-sh/ruff-action@4919ec5cf1f49eff0871dbcea0da843445b837e6 # v3.6.1
@@ -60,30 +73,45 @@ jobs:
   docker-lint:
     runs-on: ubuntu-latest
     name: "Docker linting"
-    steps:
-    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-  
-    - uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5 # v3.3.0
-      name: Lint Dockerfile
-  
-  tests:
-    runs-on: ubuntu-latest
-    name: Python tests
+    permissions:
+      contents: read
 
     steps:
     - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      with:
+        persist-credentials: false
+
+    - uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5 # v3.3.0
+      name: Lint Dockerfile
+
+  tests:
+    runs-on: ubuntu-latest
+    name: Python tests
+    permissions:
+      contents: read
+      id-token: write  # needed for the codecov actions to obtain a OIDC token
+    env:
+      UV_FROZEN: true
+
+    steps:
+    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      with:
+        persist-credentials: false
+
+    - name: Set up Python 🐍
+      id: python
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: 3.14
 
     - name: Install uv
       uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e  # v6.8.0
       with:
-        enable-cache: true
+        enable-cache: | # zizmor: ignore[cache-poisoning] cache is disabled when publishing to prevent poisoning
+          ${{ github.ref_type == 'tag' && 'false' || 'auto' }}
         cache-dependency-glob: "uv.lock"
-  
-    - name: Set up Python 🐍
-      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-      with:
-        python-version: 3.14
-  
+        python-version: ${{ steps.python.outputs.python-path }}
+
     - name: Install dependencies
       run: |
         uv sync
@@ -95,13 +123,14 @@ jobs:
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+        use_oidc: true
 
     - name: Upload test results to Codecov
       if: ${{ !cancelled() }}
-      uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3  # v1.2.1
+      uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+        report_type: test_results
+        use_oidc: true
 
   build:
     runs-on: ubuntu-latest
@@ -112,13 +141,15 @@ jobs:
     - docker-lint
     permissions:
       contents: read
-      packages: write
-      attestations: write
-      id-token: write
+      packages: write  # so we can log into the GitHub container registry and push
+      attestations: write  # required to publish attestations
+      id-token: write  # required to publish attestations
 
     steps:
     - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-  
+      with:
+        persist-credentials: false
+
     - name: Build test image
       uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
       with:
@@ -126,13 +157,13 @@ jobs:
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:test
         build-args: |
           VERSION="0.1.0dev0+test"
-    
+
     - name: Image smoketest
       env:
         TEST_TAG: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:test
       run: |
         docker run --rm "${TEST_TAG}" --smoketest
-    
+
     - name: Extract docker image tag
       id: image_tag
       run: |
