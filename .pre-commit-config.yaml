@@ -28,7 +28,7 @@ repos:
   - id: hadolint-docker
     entry: ghcr.io/hadolint/hadolint:v2.12.0 hadolint
 - repo: https://github.com/zizmorcore/zizmor-pre-commit
-  rev: v1.25.1
+  rev: v1.25.2
   hooks:
   - id: zizmor
 - repo: https://github.com/rhysd/actionlint
