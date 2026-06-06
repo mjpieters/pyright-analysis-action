@@ -1,17 +1,16 @@
 import asyncio
 import datetime
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Protocol, Self
-from unittest.mock import patch
+from typing import Protocol
+from unittest.mock import Mock, patch, seal
 
 import pytest
 from aiohttp import (
     ClientConnectionError,
     ClientResponse,
-    ClientSession,
     hdrs,
 )
-from aioresponses import aioresponses as _AioResponses
+from aioresponses import aioresponses as AioResponses
 from yarl import URL
 
 from pyright_analysis_action import __version__
@@ -24,23 +23,29 @@ from pyright_analysis_action.smokeshow import (
     upload,
 )
 
+_STREAM_WRITER = Mock(output_size=0)
+seal(_STREAM_WRITER)
 
-class AioResponses(_AioResponses):
-    async def _request_mock(
-        self,
-        orig_self: ClientSession,
-        method: str,
-        url: URL | str,
-        *args: Any,
-        **kwargs: Any,
-    ) -> "ClientResponse":
-        # A future release for aioresponses includes this fix.
-        url = orig_self._build_url(url)
-        return await super()._request_mock(orig_self, method, url, *args, **kwargs)
 
-    if TYPE_CHECKING:
+@pytest.fixture(autouse=True)
+def patch_aiohttp() -> Iterator[None]:
+    # Work around pnuckowski/aioresponses#289, caused by an API change in
+    # aiohttp 3.14.0. This provides the missing keyword argument as a mock,
+    # which suffices for these tests. This is what the upstream patch
+    # at pnuckowski/aioresponses#288 does. On future versions of aioresponses
+    # this patch should be a noop.
 
-        def __enter__(self) -> Self: ...
+    patched_init = orig_init = ClientResponse.__init__
+    if "stream_writer" in orig_init.__annotations__:
+
+        def patched_init(self, *args, **kwargs) -> None:
+            orig_init(self, *args, **({"stream_writer": _STREAM_WRITER} | kwargs))
+
+    ClientResponse.__init__ = patched_init
+    try:
+        yield
+    finally:
+        ClientResponse.__init__ = orig_init
 
 
 @pytest.fixture
