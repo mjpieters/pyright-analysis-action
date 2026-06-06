@@ -4,7 +4,6 @@ from io import StringIO
 from typing import cast
 from unittest.mock import MagicMock, patch
 
-import click
 import pytest
 import typer
 from yarl import URL
@@ -57,7 +56,7 @@ class TestAction:
         )
 
     def test_template_and_template_file(self):
-        with pytest.raises(click.UsageError):
+        with pytest.raises(typer.BadParameter):
             action(
                 self.report,
                 template="<html><head/>{{graph}}</html>",
@@ -66,7 +65,7 @@ class TestAction:
 
     @pytest.mark.parametrize("template", ("<html/>", StringIO("<html/>")))
     def test_template_lacking_slot(self, template: str | typer.FileText) -> None:
-        with pytest.raises(click.UsageError):
+        with pytest.raises(typer.BadParameter):
             action(self.report, template=template) if isinstance(
                 template, str
             ) else action(self.report, template_file=template)

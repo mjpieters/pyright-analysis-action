@@ -4,7 +4,6 @@ import os
 import re
 from typing import Annotated
 
-import click
 import typer
 from githubkit import ActionAuthStrategy, GitHub
 from pyright_analysis import schema, treemap
@@ -61,13 +60,13 @@ def action(
     _smoketest: SmokeTest = None,
 ) -> None:
     if template is not None and template_file is not None:
-        raise click.UsageError(
+        raise typer.BadParameter(
             "Provide either a template string or a template file, not both"
         )
     if template is None and template_file is not None:
         template = template_file.read()
     if template is not None and TEMPLATE_SLOT.search(template) is None:
-        raise click.UsageError(
+        raise typer.BadParameter(
             "Can't find a '{{ graph }}' slot in the provided template."
         )
 
