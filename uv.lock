@@ -972,7 +972,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "aioresponses", specifier = ">=0.7.7" },
+    { name = "aioresponses", specifier = ">=0.7.8" },
     { name = "graphql-core", specifier = ">=3.3.0a6" },
     { name = "pre-commit", specifier = ">=4.0.1" },
     { name = "pyright", specifier = ">=1.1.391" },
