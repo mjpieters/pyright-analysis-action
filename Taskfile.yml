@@ -101,7 +101,7 @@ tasks:
       - pyproject.toml
       - src/**/*.py
     cmds:
-      - ruff format
+      - uv run ruff format
 
   dev:format:
     aliases:
