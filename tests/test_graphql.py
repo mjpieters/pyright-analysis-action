@@ -98,7 +98,8 @@ def test_validate_variables(
 
     # The names and types of the query input variables as defined in the query
     vdefs = [
-        (vdef.variable.name.value, vdef.type) for vdef in op_def.variable_definitions
+        (vdef.variable.name.value, vdef.type)
+        for vdef in op_def.variable_definitions or ()
     ]
     # Mutations are special; they take an input type defined by the schema
     if issubclass(qcls, GQLMutation):
@@ -110,7 +111,9 @@ def test_validate_variables(
             input_type.name.value
         ].ast_node
         assert isinstance(input_type_definition, InputObjectTypeDefinitionNode)
-        vdefs = [(vdef.name.value, vdef.type) for vdef in input_type_definition.fields]
+        vdefs = [
+            (vdef.name.value, vdef.type) for vdef in input_type_definition.fields or ()
+        ]
 
     handled: set[str] = set()
     for name, var_type in vdefs:
