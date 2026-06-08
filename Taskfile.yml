@@ -68,6 +68,7 @@ tasks:
     cmds:
       - uv run ruff format --check
       - uv run ruff check
+      - uv run pyright
 
   dev:lint:dockerfile:
     sources:
