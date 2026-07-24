@@ -128,7 +128,7 @@ class SmokeshowSite(AbstractAsyncContextManager["SmokeshowSite"]):
         self._create_response = await self.create_site()
         typer.echo(self._create_response)
         self._client.headers[AUTHORIZATION_HDR] = self._create_response.secret_key
-        setattr(self._client, "_base_url", URL(self._create_response.url))
+        self._client._base_url = URL(self._create_response.url)  # pyright: ignore[reportPrivateUsage]
         return self
 
     @_smokeshow_retry

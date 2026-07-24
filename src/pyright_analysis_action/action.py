@@ -17,7 +17,7 @@ DEBUG = bool(os.environ.get("RUNNER_DEBUG"))
 TEMPLATE_SLOT = re.compile(r"\{\{\s*graph\s*\}\}")
 
 app = typer.Typer(
-    context_settings=dict(auto_envvar_prefix="INPUT"),
+    context_settings={"auto_envvar_prefix": "INPUT"},
     add_completion=False,
     pretty_exceptions_enable=DEBUG,
 )
