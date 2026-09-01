@@ -36,7 +36,7 @@ COPY --from=docker.io/chromedp/headless-shell:stable@sha256:2d349b544a1ea6b5b5fd
     /headless-shell/
 
 # Create a virtualenv with dependencies and project
-RUN --mount=from=ghcr.io/astral-sh/uv:0.12.7@sha256:95f2aa1fe59274951cfe9b0cbc7972e879ff1004bc8945d130a32eb0dbd85945,source=/uv,target=/bin/uv \
+RUN --mount=from=ghcr.io/astral-sh/uv:0.12.8@sha256:d1cbaeadc234fe19c0d93daabcf5e98738cd93c6d1dd4918ef6aa30735feb23a,source=/uv,target=/bin/uv \
     --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
